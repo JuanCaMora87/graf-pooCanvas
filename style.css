@@ -1,31 +1,14 @@
-body {
+body{
     margin: 0;
+    overflow: hidden;
+    background: black;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-
-    background-image: url("img/cascada.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
 }
 
 canvas{
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:transparent;
-}
-
-#contador {
-    position: absolute;
-    top: 20px;
-    right: 40px;
-    color: white;
-    font-size: 22px;
-    font-family: Arial;
-    font-weight: bold;
+    border: 4px solid white;
+    background: #111;
 }

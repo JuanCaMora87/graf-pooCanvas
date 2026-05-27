@@ -1,162 +1,181 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+// PALA JUGADOR
+const player = {
+    x: 20,
+    y: 200,
+    width: 15,
+    height: 100,
+    color: "white",
+    speed: 8
+};
 
-const image = new Image();
-image.src = "img/sharingan.png";
+// PALA IA
+const ai = {
+    x: 865,
+    y: 200,
+    width: 15,
+    height: 100,
+    color: "white",
+    speed: 4
+};
 
-class ObjectFalling {
+// 5 PELOTAS
+const balls = [];
 
-    constructor(x, y, size, speed) {
-        this.x = x;
-        this.y = y;
-        this.size = size;
-        this.speed = speed;
-    }
-
-    draw() {
-
-        // sombra roja estilo sharingan
-        ctx.shadowColor = "red";
-        ctx.shadowBlur = 10;
-
-        ctx.drawImage(
-            image,
-            this.x,
-            this.y,
-            this.size,
-            this.size
-        );
-
-        ctx.shadowBlur = 0;
-    }
-
-    move(counter) {
-
-        let extra = 0;
-
-        if (counter > 15) {
-            extra = 4;
-        } else if (counter > 10) {
-            extra = 2;
-        }
-
-        this.y += this.speed + extra;
-
-        // si sale abajo vuelve arriba
-        if (this.y > canvas.height) {
-            this.y = -40;
-            this.x = Math.random() * canvas.width;
-        }
-
-    }
-
+for(let i = 0; i < 5; i++){
+    balls.push({
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        radius: 10,
+        color: getRandomColor(),
+        speedX: randomSpeed(),
+        speedY: randomSpeed()
+    });
 }
 
-class Game {
+// CONTROLES
+let upPressed = false;
+let downPressed = false;
 
-    constructor() {
-
-        this.objects = [];
-        this.counter = 0;
-
-        for (let i = 0; i < 10; i++) {
-
-            this.objects.push(
-                new ObjectFalling(
-                    Math.random() * canvas.width,
-                    Math.random() * -500,
-                    45,
-                    1 + Math.random() * 3
-                )
-            );
-
-        }
-
-        this.handleClick();
-
+document.addEventListener("keydown", (e)=>{
+    if(e.key === "ArrowUp"){
+        upPressed = true;
     }
 
-    draw() {
+    if(e.key === "ArrowDown"){
+        downPressed = true;
+    }
+});
 
-        // limpia canvas pero deja ver el fondo de la página
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        this.objects.forEach(obj => {
-            obj.draw();
-        });
-
+document.addEventListener("keyup", (e)=>{
+    if(e.key === "ArrowUp"){
+        upPressed = false;
     }
 
-    update() {
-
-        this.objects.forEach(obj => {
-            obj.move(this.counter);
-        });
-
+    if(e.key === "ArrowDown"){
+        downPressed = false;
     }
+});
 
-    handleClick() {
+// FUNCION COLOR RANDOM
+function getRandomColor(){
+    const colors = [
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple",
+        "orange",
+        "cyan"
+    ];
 
-        canvas.addEventListener("click", (e) => {
-
-            const mouseX = e.offsetX;
-            const mouseY = e.offsetY;
-
-            this.objects.forEach((obj, index) => {
-
-                const centerX = obj.x + obj.size / 2;
-                const centerY = obj.y + obj.size / 2;
-
-                const dx = mouseX - centerX;
-                const dy = mouseY - centerY;
-
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < obj.size / 2) {
-
-                    this.objects.splice(index, 1);
-
-                    this.counter++;
-
-                    document.getElementById("contador").innerText =
-                        "Eliminadas: " + this.counter;
-
-                    this.objects.push(
-                        new ObjectFalling(
-                            Math.random() * canvas.width,
-                            -50,
-                            45,
-                            1 + Math.random() * 3
-                        )
-                    );
-
-                }
-
-            });
-
-        });
-
-    }
-
-    run() {
-
-        const loop = () => {
-
-            this.update();
-            this.draw();
-
-            requestAnimationFrame(loop);
-
-        };
-
-        loop();
-
-    }
-
+    return colors[Math.floor(Math.random() * colors.length)];
 }
 
-const game = new Game();
-game.run();
+// VELOCIDAD RANDOM
+function randomSpeed(){
+    let speed = Math.random() * 4 + 2;
+
+    return Math.random() < 0.5 ? -speed : speed;
+}
+
+// DIBUJAR PALA
+function drawPaddle(paddle){
+    ctx.fillStyle = paddle.color;
+    ctx.fillRect(
+        paddle.x,
+        paddle.y,
+        paddle.width,
+        paddle.height
+    );
+}
+
+// DIBUJAR PELOTA
+function drawBall(ball){
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = ball.color;
+    ctx.fill();
+    ctx.closePath();
+}
+
+// MOVIMIENTO
+function update(){
+
+    // JUGADOR
+    if(upPressed && player.y > 0){
+        player.y -= player.speed;
+    }
+
+    if(downPressed && player.y + player.height < canvas.height){
+        player.y += player.speed;
+    }
+
+    // IA
+    if(ai.y + ai.height / 2 < balls[0].y){
+        ai.y += ai.speed;
+    }else{
+        ai.y -= ai.speed;
+    }
+
+    // PELOTAS
+    balls.forEach(ball => {
+
+        ball.x += ball.speedX;
+        ball.y += ball.speedY;
+
+        // REBOTE ARRIBA/ABAJO
+        if(ball.y + ball.radius > canvas.height ||
+           ball.y - ball.radius < 0){
+            ball.speedY *= -1;
+        }
+
+        // COLISION JUGADOR
+        if(
+            ball.x - ball.radius < player.x + player.width &&
+            ball.y > player.y &&
+            ball.y < player.y + player.height
+        ){
+            ball.speedX *= -1;
+        }
+
+        // COLISION IA
+        if(
+            ball.x + ball.radius > ai.x &&
+            ball.y > ai.y &&
+            ball.y < ai.y + ai.height
+        ){
+            ball.speedX *= -1;
+        }
+
+        // REINICIO
+        if(ball.x < 0 || ball.x > canvas.width){
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+
+            ball.speedX = randomSpeed();
+            ball.speedY = randomSpeed();
+        }
+    });
+}
+
+// DIBUJAR TODO
+function draw(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    drawPaddle(player);
+    drawPaddle(ai);
+
+    balls.forEach(ball => {
+        drawBall(ball);
+    });
+
+    update();
+
+    requestAnimationFrame(draw);
+}
+
+draw();
